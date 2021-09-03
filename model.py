@@ -60,21 +60,20 @@ class DecoderRNN(nn.Module):
         lstm_output, (hn, cn) = self.lstm(inputs) #(batch, caption_len, 1* hidden_size)
         output = self.fc(lstm_output) # (batch,caption_len,vocab_size)
         return output
-
         
 
     def sample(self, inputs, states=None, max_len=20):
         " accepts pre-processed image tensor (inputs) and returns predicted sentence (list of tensor ids of length max_len) "
         ids = []
         for i in range(max_len):
-            out, hidden = self.lstm(inputs, states) # (1, 1, hidden_size) ->((1, 1, hidden_size), (1, 1, hidden_size))
+            out, states = self.lstm(inputs, states) # (1, 1, hidden_size) ->((1, 1, hidden_size), (1, 1, hidden_size))
             out = self.fc(out.squeeze(1)) #(1, vocab_size) -> ((1, hidden_size))
             max_indice = out.max(1)[1]
             new_id = max_indice.to("cpu").item()
             ids.append(new_id)
             if new_id == 1:
                 break
-            inputs = self.embed(new_id) # (1, embed_size)
+            inputs = self.embed(max_indice) # (1, embed_size)
             inputs = inputs.unsqueeze(1) # (1, 1, embed_size)
             
         return ids
